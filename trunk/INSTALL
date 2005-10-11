@@ -1,0 +1,13 @@
+First you must install Turbogears and everything it depends on, luckily this
+is extremely simple.  For those on "nix" system simply run the ez_setup.py
+script as follows
+
+sudo easy_install.py -f http://www.turbogears.org/download/index.html --script-dir /usr/local/bin TurboGears
+
+Congratulations.
+
+For those that are still having some trouble or do not use Linux goto
+
+http://www.turbogears.org.nyud.net:8090/download/index.html
+
+for more information.
