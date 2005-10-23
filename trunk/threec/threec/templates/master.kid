@@ -9,7 +9,7 @@
 <body py:match="item.tag=='{http://www.w3.org/1999/xhtml}body'">
     <h1>TurboGears is Running</h1>
     
-    <div py:if="turbogearsflash" class="flash" py:content="turbogearsflash"></div>
+    <!-- <div py:if="turbogearsflash" class="flash" py:content="turbogearsflash"></div> !-->
     
     <div py:replace="item[:]"/>
 </body>
