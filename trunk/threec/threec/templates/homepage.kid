@@ -14,7 +14,7 @@
       <input type="submit" value="Create" /><br/>
     </form>
     
-    <p py:if="has_key('message')"><span py:replace="message">Message</span></p>
+    <span py:replace="message">Message</span>
     Login<br/>
     <form action="login" method="post">
       Name:<textarea name="user" rows="1" cols="15"></textarea><br/>
