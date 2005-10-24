@@ -8,9 +8,10 @@ class Root:
 
     @turbogears.expose(html="threec.templates.homepage")
     def index(self,unknown=False):
-	ret = {'message':''}
+	ret = {}
 	if unknown:
-	    ret['message']='Unknown username/password'
+	    message = ['Unknown username/password']
+	    ret['message']=message
 	    
 	return ret
 
@@ -46,45 +47,43 @@ class Root:
     def createuser(self,**kw):
 	return kw
 
-    @turbogears.expose(html='threec.templates.homepage')
+    @turbogears.expose(html='threec.templates.createuser')
     def createaccount(self,**kw):
 	#ret = {'message':''}
-	ret = {}
+	message = []
+	ret = {'message':message}
 	good = True
-
-	print str(kw)
 
 	for x in kw.items():
 	    if len(x[1]) < 3:
-		ret[x[0]]=' %s must be at least 3 characters'%x[1]
+		#ret[x[0]]=' %s must be at least 3 characters'%x[1]
+		message.append('%s must be at least 3 characters'%x[0])
 		good = False
 
 	if not good:
-	    ret['tg_template']='threec.templates.createuser'
 	    print str(ret)
 	    return ret
 
 	try:
 	    user = User.byUser(kw['username'])
 	except SQLObjectNotFound:
-	    if kw['passwd'] != kw['passwdchk']:
-		ret['pwchk'] = "You mistyped your password and/or it's confirmation"
-
-	    if len(ret):
-		ret['tg_template']='threec.templates.createuser'
+	    if not kw['passwd'] == kw['passwdchk']:
+		print 'stupid people'
+		message.append('You mistyped your password and/or its confirmation')
 		return ret
 
 	    hub.begin()
 	    User(user=kw['username'],passwd=sha.sha(kw['passwd']).hexdigest(),email=kw['email'])
-	    ret['message']='You have successfully created your account %s.  Try logging in now!' % kw['username']
+	    message.append('You have successfully created your account %s.  Try logging in now!' % kw['username'])
 	    hub.commit()
 	    hub.end()
+	    ret['tg_template']='threec.templates.homepage'
+	    print str(ret)
 	    return ret
 
-	ret['message']='That name is already taken please try again'
+	message.append('That name is already taken please try again')
 	return ret
 	
-
     @turbogears.expose(html='threec.templates.homepage')
     def confirm(self,passwdchk,email):
 	return dict()

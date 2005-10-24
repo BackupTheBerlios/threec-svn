@@ -1,15 +1,19 @@
-<html>
+<html xmlns:py="http://purl.org/kid/ns#">
+
+<?python
+try:
+   if message:
+      pass
+except NameError:
+   message = []
+print 'ok all'
+?>
   <head>
     <title>Creating Your Account</title>
   </head>
   <body>
-    <span>
-      Came here in error? Log in from here.
-      <form action="login" method="post">
-	Name:<textarea name="user" rows="1" cols="15"></textarea><br/>
-	Password:<input type="password" name="passwd" rows="1" cols="15" /><br/>
-	<input type="submit" value="Login" /><br/>
-      </form>
+    <span py:for="msg in message">
+      <p py:content="msg">Message to be displayed</p>
     </span>
     <form action="createaccount" method="post">
       Desired Username:<textarea name="username" rows="1" cols="15"></textarea><br/>
