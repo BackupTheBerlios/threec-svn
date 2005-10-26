@@ -88,20 +88,26 @@ class Root:
     def confirm(self,passwdchk,email):
 	return dict()
 
-    @turbogears.expose(html='threec.templates.login')
+    @turbogears.expose(html='threec.templates.homepage')
     def login(self,user,passwd):
+	message = []
+	ret = {'message':message}
+
 	try:
 	    user = User.byUser(user)
 	except SQLObjectNotFound:
-	    raise cherrypy.HTTPRedirect('/createuser?')
+	    message.append('That is an invalid Username/Password')
+	    return ret
 
 	if sha.sha(passwd).hexdigest() == user.passwd:
 	    #create a session
 	    pass
 	else:
-	    raise cherrypy.HTTPRedirect('/index?unknown=true' % user)
+	    message.append('That is an invalid Username/Password')
+	    return ret
 
-	return 'Logged in successfully'
+	message.append('You have successfully logged in')
+	return ret
 
     #@turbogears.expose(html="threec.templates.homepage")
     #def searchuser(self,username="Unknown"):

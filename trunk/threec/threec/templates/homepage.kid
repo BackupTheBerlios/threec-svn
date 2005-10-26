@@ -1,14 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:py="http://purl.org/kid/ns#">
-
-<?python
-try:
-   if message:
-      pass
-except NameError:
-   message = []
-print 'all ok'
-?>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:py="http://purl.org/kid/ns#"
+      py:extends="'master.kid'">
 
   <head>
     <meta content="text/html; charset=UTF-8" http-equiv="content-type" />
@@ -22,14 +14,6 @@ print 'all ok'
       <input type="submit" value="Create" /><br/>
     </form>
     
-<!--
-    <span py:replace="message">Message</span>
-!-->
-
-    <span py:for="msg in message">
-      <p py:content="msg">Message to be displayed</p>
-    </span>
-
     Login<br/>
     <form action="login" method="post">
       Name:<textarea name="user" rows="1" cols="15"></textarea><br/>

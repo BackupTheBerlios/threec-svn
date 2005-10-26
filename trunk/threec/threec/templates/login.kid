@@ -8,7 +8,6 @@
   </head>
 
   <body>
-
     <form action="createuser" method="post">
       Username:<textarea name="user" rows="1" cols="15"></textarea><br/>
       Password:<input type="password" name="passwd" rows="1" cols="15"></textarea><br/>
