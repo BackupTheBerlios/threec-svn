@@ -11,6 +11,8 @@ class User(SQLObject):
     user = StringCol(alternateID=True,length=15)
     email = StringCol(length=40)
     passwd = StringCol(length=40)
+    contests_hosting = MultipleJoin('Contest')
+    submissions = MultipleJoin('Submission')
     
 class Contest(SQLObject):
     '''The basic data for each individual contest - Non-contest times are really a special case contest?'''
@@ -18,27 +20,11 @@ class Contest(SQLObject):
     start = DateTimeCol()
     end = DateTimeCol()
     name = StringCol(length=20)
-    problemset = IntCol()
+    problemset = MultipleJoin('Problem')
+    submission = MultipleJoin('Submission')
     creator = StringCol()
 
-class ContestLog(SQLObject):
-    '''A contest is a series of submissions - Non-contest submissions is really just a special case contest?'''
-    _connection = hub
-    contestName = StringCol()
-    submission = IntCol()
-
-class ContestProblemMapping(SQLObject):
-    '''Provides a mapping from contests to problems and vice versa.  Using the power of
-    SQLObject that puts the objects in here for convenience'''
-    contestName = StringCol(length=20)
-    problemName = StringCol()
-    def getContest(problem):
-	pass
-    
-    def getProblems(contest):
-	pass
-
-class Problems(SQLObject):
+class Problem(SQLObject):
     '''Each problem gets an entry in here'''
     _connection = hub
     author = StringCol()
@@ -49,18 +35,20 @@ class Problems(SQLObject):
     correctness = IntCol()
     altjudgerprogram = StringCol(default=None)
 
+class Submission(SQLObject):
+    '''I think it would be better to just log all submissions which contests can store the ID to'''
+    user = ForeignKey('User')
+    problem = ForeignKey('Problem')
+    code = StringCol()
+    response = StringCol(length=10)
+    speed = IntCol()
+    memory = IntCol()
+    time = DateTimeCol()
+    contest = ForeignKey('Contest')
+
 class Page(SQLObject):
     '''Intended to hold wiki data - No idea if we want/need this'''
     _connection = hub
     pagename = StringCol(alternateID=True,length=40)
     data = StringCol()
 
-class Submission(SQLObject):
-    '''I think it would be better to just log all submissions which contests can store the ID to'''
-    user = StringCol(length=15)
-    problem = IntCol()
-    code = StringCol()
-    response = StringCol(length=10)
-    speed = IntCol()
-    memory = IntCol()
-    time = DateTimeCol()
