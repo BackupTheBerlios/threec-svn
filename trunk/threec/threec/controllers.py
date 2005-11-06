@@ -28,10 +28,22 @@ class Root:
 
     @turbogears.expose(html='threec.templates.homepage')
     def default(self,*args,**kw):
-	message = [str(kw)]
-	message.append(str(args))
-	ret = {'message':message}
-	return ret
+	#message = [str(kw)]
+	#message.append(str(args))
+	#ret = {'message':message}
+	#return ret
+	ret = {}
+
+	print args[0]
+
+	try:
+	    if args[0] == 'problems':
+		print 'good'
+		ret['tg_template']='threec.templates.problemstatement'
+		ret['problem']=Page.byPagename('%s_%s'%(args[1],args[2])).data
+		return ret
+	except IndexError:
+	    return 'Something unintended happened'
 
     @turbogears.expose(html='threec.templates.createuser')
     def createuser(self,**kw):
@@ -53,11 +65,13 @@ class Root:
     def problems(self,contest):
 	problems = []
 	ret = {'problems':problems}
-#	try:
-	set = Problem.select('contestID=%d'%contest)
-#	except:
+	contest = Contest.get(int(contest))
+	set = contest.problemset
 	for item in set:
-	    problems.append([])
+	    problems.append([item.problemName,item.problemUrl,item.author])
+
+	ret['message']=['Problem set for %s'%contest.name]
+	return ret
 
     @turbogears.expose(html='threec.templates.createuser')
     def createaccount(self,**kw):
