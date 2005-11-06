@@ -2,8 +2,6 @@ from sqlobject import *
 from turbogears.database import AutoConnectHub
 
 hub = AutoConnectHub()
-'''I don't think these all need to have _connection = hub, I dont think we will be using a lot of
-transactions'''
 
 class User(SQLObject):
     '''Self explanatory'''
@@ -22,28 +20,30 @@ class Contest(SQLObject):
     name = StringCol(length=20)
     problemset = MultipleJoin('Problem')
     submission = MultipleJoin('Submission')
-    creator = StringCol()
+    user = ForeignKey('User') #the creator
 
 class Problem(SQLObject):
     '''Each problem gets an entry in here'''
     _connection = hub
-    author = StringCol()
-    problemName = StringCol()
-    problemUrl = StringCol()
-    timelimit = IntCol()
-    memlimit = IntCol()
-    correctness = IntCol()
+    author = StringCol(notNone=True)
+    problemName = StringCol(notNone=True)
+    problemUrl = StringCol(default='/searchProblems')
+    timelimit = IntCol(default=10)
+    memlimit = IntCol(default=512)
+    correctness = IntCol(default=100)
+    contest = ForeignKey('Contest')
     altjudgerprogram = StringCol(default=None)
 
 class Submission(SQLObject):
     '''I think it would be better to just log all submissions which contests can store the ID to'''
+    _connection = hub
     user = ForeignKey('User')
     problem = ForeignKey('Problem')
-    code = StringCol()
+    code = StringCol(notNone=True)
     response = StringCol(length=10)
-    speed = IntCol()
-    memory = IntCol()
-    time = DateTimeCol()
+    speed = IntCol(notNone=True)
+    memory = IntCol(notNone=True)
+    time = DateTimeCol(default=DateTimeCol.now())
     contest = ForeignKey('Contest')
 
 class Page(SQLObject):

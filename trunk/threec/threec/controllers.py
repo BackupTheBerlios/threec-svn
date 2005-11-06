@@ -1,5 +1,5 @@
 import turbogears
-from model import Page,hub,User
+from model import Page,hub,User,Contest,Submission,Problem
 from sqlobject import SQLObjectNotFound
 import cherrypy
 import sha
@@ -8,55 +8,65 @@ class Root:
 
     @turbogears.expose(html="threec.templates.homepage")
     def index(self,unknown=False):
+	message = []
+	ret = {'message':message}
 	ret = {}
 	if unknown:
-	    message = ['Unknown username/password']
-	    ret['message']=message
+	    message.append('Unknown username/password')
 	    
 	return ret
 
-    @turbogears.expose(html='threec.templates.edit')
-    def edit(self,pagename,new=False):
-	if not new:
-	    page = Page.byPagename(pagename)
-	    pagename = page.pagename
-	    data = page.data
-	else:
-	    pagename = pagename
-	    data = 'Edit me please'
-	return dict(pagename=pagename,data=data)
+    @turbogears.expose(html='threec.templates.homepage')
+    def searchUsers(self,user):
+	message = []
+	try:
+	    message.append(User.byUser(user))
+	except SQLObjectNotFound:
+	    message.append('%s not found'%user)
+	ret = {'message':message}
+	return ret
 
-    @turbogears.expose(html='threec.templates.userList')
-    def searchuser(self,user,type):
-	if type is 'coder':
-	    type = 'Coder'
-	else:
-	    type = 'Problem Setter'
-	return {'user':user,'type':type}
-
-    def save(self,pagename,data,submit):
-	hub.begin()
-	page = Page.byPagename(pagename)
-	page.data = data
-	hub.commit()
-	hub.end()
-	turbogears.flash("Changes saved!")
-	raise cherrypy.HTTPRedirect('/%s'%pagename)
+    @turbogears.expose(html='threec.templates.homepage')
+    def default(self,*args,**kw):
+	message = [str(kw)]
+	message.append(str(args))
+	ret = {'message':message}
+	return ret
 
     @turbogears.expose(html='threec.templates.createuser')
     def createuser(self,**kw):
-	return kw
+	#message = []
+	#kw['message']=message
+	return dict()
+    
+    @turbogears.expose(html='threec.templates.contests')
+    def contests(self,**kw):
+	contests = Contest.select()
+	_contests = []
+	for contest in contests:
+	    _contests.append([contest.name,contest.start,contest.end,contest.user.user,'/problems?contest=%d'%contest.id])
+	    
+	ret = {'contests':_contests}
+	return ret
+
+    @turbogears.expose(html='threec.templates.problems')
+    def problems(self,contest):
+	problems = []
+	ret = {'problems':problems}
+#	try:
+	set = Problem.select('contestID=%d'%contest)
+#	except:
+	for item in set:
+	    problems.append([])
 
     @turbogears.expose(html='threec.templates.createuser')
     def createaccount(self,**kw):
-	#ret = {'message':''}
 	message = []
 	ret = {'message':message}
 	good = True
 
 	for x in kw.items():
 	    if len(x[1]) < 3:
-		#ret[x[0]]=' %s must be at least 3 characters'%x[1]
 		message.append('%s must be at least 3 characters'%x[0])
 		good = False
 
@@ -84,10 +94,6 @@ class Root:
 	message.append('That name is already taken please try again')
 	return ret
 	
-    @turbogears.expose(html='threec.templates.homepage')
-    def confirm(self,passwdchk,email):
-	return dict()
-
     @turbogears.expose(html='threec.templates.homepage')
     def login(self,user,passwd):
 	message = []

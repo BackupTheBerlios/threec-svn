@@ -14,6 +14,7 @@ try:
    if message:
       pass
 except NameError:
+   print 'created an empty message'
    message = []
 
 print 'this works'

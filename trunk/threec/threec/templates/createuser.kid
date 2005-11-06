@@ -1,20 +1,10 @@
-<html xmlns:py="http://purl.org/kid/ns#">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
-<?python
-try:
-   if message:
-      pass
-except NameError:
-   message = []
-print 'ok all'
-?>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:py="http://purl.org/kid/ns#" py:extends="'master.kid'">
   <head>
     <title>Creating Your Account</title>
   </head>
   <body>
-    <span py:for="msg in message">
-      <p py:content="msg">Message to be displayed</p>
-    </span>
     <form action="createaccount" method="post">
       Desired Username:<textarea name="username" rows="1" cols="15"></textarea><br/>
       Desired Password:<input name="passwd" type="password" rows="1" cols="15"/><br/>
