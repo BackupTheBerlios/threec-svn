@@ -4,13 +4,17 @@
 
   <head>
     <meta content="text/html; charset=UTF-8" http-equiv="content-type" />
-    <title>Problem List</title>
+    <title>Problems made by ${author}</title>
   </head>
   
+  <span>
+    All problems by ${author}:
+  </span>
+
   <body>
     <ul>
       <li py:for="problem in problems">
-	<a href="${problem[1]}">${problem[0]}</a> by <a href="/author?s=${problem[2]}">${problem[2]}</a>
+	<a href="${problem[1]}">${problem[0]}</a>
       </li>
     </ul>
   </body>

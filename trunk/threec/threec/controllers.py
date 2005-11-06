@@ -51,6 +51,17 @@ class Root:
 	#kw['message']=message
 	return dict()
     
+    @turbogears.expose(html='threec.templates.author')
+    def author(self,s):
+	probs = Problem.select('author="%s"'%s)
+	problems = []
+	ret = {'problems':problems}
+	for item in probs:
+	    problems.append([item.problemName,item.problemUrl])
+	    
+	ret['author']=s
+	return ret
+
     @turbogears.expose(html='threec.templates.contests')
     def contests(self,**kw):
 	contests = Contest.select()
