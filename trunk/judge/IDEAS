@@ -1,0 +1,8 @@
+From dgott: Abstract away jail, have a NakedJudge as well as a XenJudge, 
+make the interface sufficiently general that a UMLJudge can be plugged 
+in without much reworking of the interface.
+
+Maybe: Use python module difflib for whitespace insensitive (presentation 
+error) diffing.  It seems cleaner to call a module than shell out to 
+diff -b.
+
