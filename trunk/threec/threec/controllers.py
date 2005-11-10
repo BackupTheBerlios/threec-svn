@@ -2,7 +2,16 @@ import turbogears
 from model import Page,hub,User,Contest,Submission,Problem
 from sqlobject import SQLObjectNotFound
 import cherrypy
-import sha
+import sha,datetime
+
+def separateContests(contest):
+    return [contest.name,contest.start,contest.end,contest.user.user,'/problems?contestId=%d'%contest.id]
+
+def separateSubmission(subm):
+    return [subm.problem.problemName,subm.problem.problemUrl,'/viewcode?submissionId=%d'%subm.id]
+
+def separateProblems(prob):
+    return [prob.problemName,prob.problemUrl,prob.author,prob.contest.name,'/problems?contestId=%d'%prob.contest.id,'/submissions?problemId=%d'%prob.id]
 
 class Root:
 
@@ -16,15 +25,76 @@ class Root:
 	    
 	return ret
 
-    @turbogears.expose(html='threec.templates.homepage')
-    def searchUsers(self,user):
-	message = []
-	try:
-	    message.append(User.byUser(user))
-	except SQLObjectNotFound:
-	    message.append('%s not found'%user)
-	ret = {'message':message}
+    @turbogears.expose(html='threec.templates.editcontest')
+    def editcontest(self,contestId,user):
+	name = ''
+	start = ''
+	end = ''
+	problems = []
+	ret = {'name':name,'start':start,'end':end,'problemset':problems,'user':user}
+
+	if contestId:
+	    contest = Contest.get(contestId)
+	    name = contest.name
+	    start = contest.start
+	    end = contest.end
+	    problems = contest.problemset
+
 	return ret
+
+    @turbogears.expose(html='threec.templates.hosting')
+    def hostcontest(self,user=None,passwd=None):
+	if not user:
+	    return {'message':['Must enter a valid username and password to manage contests'],'tg_template':'threec.templates.homepage'}
+
+	loginSuccessful = login(self,user,passwd)
+	if loginSuccessful['message'][0].count('invalid'):
+	    return {'message':['Must enter a valid username and password to manage contests'],'tg_template':'threec.templates.homepage'}
+
+	user = User.byUser(user)
+	priorContests = []
+	upcomingContests = []
+	now = datetime.datetime.now()
+	for contest in user.contests_hosting:
+	    if contest.start > now:
+		upcomingContests.append(contest)
+	    else:
+		priorContests.append(contest)
+
+	ret = {'prior':priorContests,'upcoming':upcomingContests,'tg_template':'threec.templates.managecontests','user':user}
+	return ret
+
+    @turbogears.expose(html='threec.templates.userlist')
+    def searchusers(self,userName):
+	message = []
+	ret = {'message':message}
+	try:
+	    user = User.byUser(userName)
+	except SQLObjectNotFound:
+	    message.append('%s is an unknown username'%userName)
+	    ret['tg_template'] = 'threec.templates.homepage'
+	    return ret
+
+	ret['user'] = userName
+	submissions = [separateSubmission(q) for q in user.submissions]
+	ret['submissions']=submissions
+	return ret
+
+    @turbogears.expose(html='threec.templates.viewcode')
+    def viewcode(self,submissionId):
+	message = []
+	ret = {'message':message}
+
+	try:
+	    subm = Submission.get(submissionId)
+	except SQLObjectNotFound:
+	    message.append('%d is an unknown submission ID'%submissionId)
+	    ret['tg_template']='threec.templates.homepage'
+	    return ret
+	
+	#ret['code'] = subm.code
+	#return ret
+	return subm.code #kills < > thinking they are tags
 
     @turbogears.expose(html='threec.templates.homepage')
     def default(self,*args,**kw):
@@ -56,27 +126,58 @@ class Root:
 	probs = Problem.select('author="%s"'%s)
 	problems = []
 	ret = {'problems':problems}
+	now = datetime.datetime.now()
 	for item in probs:
-	    problems.append([item.problemName,item.problemUrl])
+	    if item.contest.start < now:
+		problems.append([item.problemName,item.problemUrl])
 	    
 	ret['author']=s
+	return ret
+
+    @turbogears.expose(html='threec.templates.contests')
+    def upcomingcontests(self,**kw):
+	contests = Contest.select()
+	_contests = []
+	now = datetime.datetime.now()
+	for contest in contests:
+	    if contest.start > now:
+		_contests.append(separateContests(contest))
+
+	if not len(_contests):
+	    ret = {'message':['No contests are scheduled']};
+	else:
+	    ret = {}
+
+	ret['contests']=_contests
+	ret['showProblemSetLink']=False
 	return ret
 
     @turbogears.expose(html='threec.templates.contests')
     def contests(self,**kw):
 	contests = Contest.select()
 	_contests = []
+	now = datetime.datetime.now()
 	for contest in contests:
-	    _contests.append([contest.name,contest.start,contest.end,contest.user.user,'/problems?contest=%d'%contest.id])
+	    if contest.start < now:
+		_contests.append(separateContests(contest))
 	    
-	ret = {'contests':_contests}
+	ret = {'contests':_contests,'showProblemSetLink':True}
 	return ret
 
     @turbogears.expose(html='threec.templates.problems')
-    def problems(self,contest):
+    def problems(self,contestId):
 	problems = []
 	ret = {'problems':problems}
-	contest = Contest.get(int(contest))
+	try:
+	    contest = Contest.get(int(contestId))
+	except SQLObjectNotFound:
+	    ret['message'] = ['%d is not a valid contest id'%contestId]
+	    return ret
+
+	if contest.start > datetime.datetime.now():
+	    ret['message'] = ['The contest has not started yet']
+	    return ret
+
 	set = contest.problemset
 	for item in set:
 	    problems.append([item.problemName,item.problemUrl,item.author])

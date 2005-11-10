@@ -33,6 +33,7 @@ class Problem(SQLObject):
     correctness = IntCol(default=100)
     contest = ForeignKey('Contest')
     altjudgerprogram = StringCol(default=None)
+    submissions = MultipleJoin('Submission')
 
 class Submission(SQLObject):
     '''I think it would be better to just log all submissions which contests can store the ID to'''
@@ -45,6 +46,7 @@ class Submission(SQLObject):
     memory = IntCol(notNone=True)
     time = DateTimeCol(default=DateTimeCol.now())
     contest = ForeignKey('Contest')
+    language = StringCol(length=6)
 
 class Page(SQLObject):
     '''Intended to hold wiki data - No idea if we want/need this'''

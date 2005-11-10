@@ -9,15 +9,15 @@
   
   <body>
     <table>
-      <tr>
-	<td>Name</td><td>Start</td><td>End</td><td>Created By</td><td>Problem Set</td>
+      <tr align="center">
+	<td>Name</td><td>Start</td><td>End</td><td>Created By</td><td py:if="showProblemSetLink">Problem Set</td>
       </tr>
-      <tr py:for="contest in contests">
+      <tr py:for="contest in contests" align="center">
 	<td py:content="contest[0]">Name</td>
 	<td py:content="contest[1]">Start</td>
 	<td py:content="contest[2]">End</td>
-	<td py:content="contest[3]">Created By</td>
-	<td><a href="${contest[4]}">View Problems</a></td>
+	<td py:content="contest[3]"><a href="/searchUsers?userName=${contest[3]}">Created By</a></td>
+	<td py:if="showProblemSetLink"><a href="${contest[4]}">View Problems</a></td>
       </tr>
     </table>
   </body>

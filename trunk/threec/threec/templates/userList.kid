@@ -8,12 +8,16 @@
   </head>
 
   <body>
-    <p>You searched for <span py:replace="user"> username </span></p>
-    <p> 
-      Here are <span py:replace="user">username</span>'s stats as a <span py:replace="type"> coder/problemsetter </span>
-    </p>
-    <div>
-      <font size="2">Powered by <a href="http://www.turbogears.org.nyud.net:8090/">Turbogears</a> and SQLite</font>
-    </div>
+    <p>User information for <span py:replace="user"> username </span></p>
+
+    <table>
+      <tr align="center">
+	<td>Problem</td><td>Code</td>
+      </tr>
+      <tr py:for="subm in submissions" align="center">
+	<td><a href="${subm[1]}">${subm[0]}</a></td>
+	<td><a href="${subm[2]}">View Code</a></td>
+      </tr>
+    </table>
   </body>
 </html>

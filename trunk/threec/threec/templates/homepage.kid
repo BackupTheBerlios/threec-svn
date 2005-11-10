@@ -22,13 +22,13 @@
     
     <br/>
     <a href="/contests">All Competitions</a><br/>
-    <a href="/calender">Upcoming Competitions</a><br/>
-    <a href="/host">Manage your Competitions</a><br/>
+    <a href="/upcomingcontests">Upcoming Competitions</a><br/>
+    <a href="/hostcontests">Manage your Competitions</a><br/>
 
     <br />
     Search for a User:<br/>
-    <form action="searchUsers" method="post">
-      <textarea name="user" rows="1" cols="15"></textarea><br/>      
+    <form action="searchusers" method="post">
+      <textarea name="userName" rows="1" cols="15"></textarea><br/>      
       <input type="submit" value="Search" /><br/>
     </form><br/>
     
