@@ -23,8 +23,15 @@
     <br/>
     <a href="/contests">All Competitions</a><br/>
     <a href="/upcomingcontests">Upcoming Competitions</a><br/>
-    <a href="/hostcontests">Manage your Competitions</a><br/>
 
+
+    Manage your Competitions:<br/>
+    <form action="hostcontests" method="post">
+      Name:<textarea name="user" rows="1" cols="15"></textarea><br/>
+      Password:<input type="password" name="passwd" rows="1" cols="15" /><br/>
+      <input type="submit" value="Login" /><br/>
+    </form>
+      
     <br />
     Search for a User:<br/>
     <form action="searchusers" method="post">

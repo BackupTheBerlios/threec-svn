@@ -13,7 +13,30 @@ def separateSubmission(subm):
 def separateProblems(prob):
     return [prob.problemName,prob.problemUrl,prob.author,prob.contest.name,'/problems?contestId=%d'%prob.contest.id,'/submissions?problemId=%d'%prob.id]
 
+def login(user,passwd):
+    try:
+	user = User.byUser(user)
+    except SQLObjectNotFound:
+	return False
+    
+    if not sha.sha(passwd).hexdigest() == user.passwd:
+	return False
+
+    return True
+
 class Root:
+
+    @turbogears.expose(html='threec.templates.editcontest')
+    def savecontest(self,user,name,syear,smonth,sday,shour,smin,eyear,emonth,eday,ehour,emin):
+	start = datetime.datetime(syear,smonth,sday,shour)
+	end = datetime.datetime(eyear,emonth,eday,ehour)
+	contest = Contest(start=start,end=end,name=name,user=user)
+	ret = {}
+	ret['name']=name
+	ret['start']=start
+	ret['end']=end
+	ret['user']=user
+	return ret
 
     @turbogears.expose(html="threec.templates.homepage")
     def index(self,unknown=False):
@@ -26,12 +49,13 @@ class Root:
 	return ret
 
     @turbogears.expose(html='threec.templates.editcontest')
-    def editcontest(self,contestId,user):
+    def editcontest(self,contestId,userId):
+	contestId = int(contestId)
 	name = ''
 	start = ''
 	end = ''
 	problems = []
-	ret = {'name':name,'start':start,'end':end,'problemset':problems,'user':user}
+	ret = {'name':name,'start':start,'end':end,'problemset':problems,'user':userId}
 
 	if contestId:
 	    contest = Contest.get(contestId)
@@ -43,25 +67,22 @@ class Root:
 	return ret
 
     @turbogears.expose(html='threec.templates.hosting')
-    def hostcontest(self,user=None,passwd=None):
-	if not user:
-	    return {'message':['Must enter a valid username and password to manage contests'],'tg_template':'threec.templates.homepage'}
-
-	loginSuccessful = login(self,user,passwd)
-	if loginSuccessful['message'][0].count('invalid'):
+    def hostcontests(self,user=None,passwd=None):
+	if not login(user,passwd):
 	    return {'message':['Must enter a valid username and password to manage contests'],'tg_template':'threec.templates.homepage'}
 
 	user = User.byUser(user)
 	priorContests = []
 	upcomingContests = []
 	now = datetime.datetime.now()
+
 	for contest in user.contests_hosting:
 	    if contest.start > now:
 		upcomingContests.append(contest)
 	    else:
 		priorContests.append(contest)
 
-	ret = {'prior':priorContests,'upcoming':upcomingContests,'tg_template':'threec.templates.managecontests','user':user}
+	ret = {'prior':priorContests,'upcoming':upcomingContests,'userId':user.id}
 	return ret
 
     @turbogears.expose(html='threec.templates.userlist')
@@ -225,20 +246,12 @@ class Root:
 	message = []
 	ret = {'message':message}
 
-	try:
-	    user = User.byUser(user)
-	except SQLObjectNotFound:
-	    message.append('That is an invalid Username/Password')
-	    return ret
-
-	if sha.sha(passwd).hexdigest() == user.passwd:
+	if login(user,passwd):
 	    #create a session
-	    pass
+	    message.append('You have successfully logged in.')
 	else:
-	    message.append('That is an invalid Username/Password')
-	    return ret
+	    message.append('That is an invalid Username/Password.')
 
-	message.append('You have successfully logged in')
 	return ret
 
     #@turbogears.expose(html="threec.templates.homepage")

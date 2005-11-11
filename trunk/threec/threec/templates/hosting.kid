@@ -3,21 +3,31 @@
 
   <head>
     <meta content="text/html; charset=UTF-8" http-equiv="content-type" />
-    <title>Welcome to the Collaborative Coding Contest Hosting Page</title>
+    <title>Manage your contests</title>
   </head>
-
+  
   <body>
-    
-    Login<br/>
-    Information must be entered because I don't have sessions enabled yet<br/>
-    <form action="hostcontest" method="post">
-      Name:<textarea name="user" rows="1" cols="15"></textarea><br/>
-      Password:<input type="password" name="passwd" rows="1" cols="15" /><br/>
-      <input type="submit" value="Login" /><br/>
-    </form>
-    
-    <div>
-      <font size="2">Powered by <a href="http://www.turbogears.org.nyud.net:8090/">Turbogears</a> and SQLite</font>
-    </div>
+
+
+    <table>
+      <tr align="center">
+	<td>Contest Name</td><td>Contest Start</td><td>Contest End</td>
+      </tr>
+      <tr>
+	<td align="center">Prior Contests</td>
+      </tr>
+      <tr py:for="contest in prior" align="center">
+	<td><a href="/submissions?contestId=${contest.id}">${contest.name}</a></td>
+	<td>{$contest.start}</td><td>{$contest.end}</td>
+      </tr>
+      <tr><td align="center">Upcoming Contest</td></tr>
+      <tr py:for="contest in upcoming" align="center">
+	<td><a href="/editcontest?contestId=${contest.id}&amp;userId=${userId}">${contest.name}</a></td>
+	<td>{$contest.start}</td><td>{$contest.end}</td>
+      </tr>
+    </table>
+
+    <a href="/editcontest?contestId=0&amp;userId=${userId}">Add a new contest</a>
+
   </body>
 </html>
