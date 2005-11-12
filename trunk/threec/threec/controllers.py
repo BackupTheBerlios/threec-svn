@@ -24,18 +24,83 @@ def login(user,passwd):
 
     return True
 
+def problemUrl(id):
+    volume = id / 1000 + 1
+    problem = id % 1000
+    problem = str(problem)
+
+    if(int(problem) < 100):
+	problem = '0' + problem
+    if(int(problem) < 10):
+	problem = '0' + problem
+
+    return 'http://localhost:8080/problems/' + 'i'*(volume) + '/' + problem + '/'
+
+def pageName(id):
+    #base = 'http://localhost:8080/problems/'
+    volume = id / 1000 + 1
+    problem = id % 1000
+    problem = str(problem)
+
+    if(int(problem) < 100):
+	problem = '0' + problem
+    if(int(problem) < 10):
+	problem = '0' + problem
+
+    base = 'i'*volume + '_' + problem
+    return base
+
+def html(problemName,problemStmt):
+    ret = '<html><head>' + problemName + '</head><body>' + problemStmt + '</body></html>'
+    return ret
+
 class Root:
 
     @turbogears.expose(html='threec.templates.editcontest')
-    def savecontest(self,user,name,syear,smonth,sday,shour,smin,eyear,emonth,eday,ehour,emin):
+    def remove(self,userId,contestId,problemId):
+	Problem.delete(problemId)
+	return self.editcontest(contestId,userId)
+
+    @turbogears.expose(html='threec.templates.editcontest')
+    def addproblem(self,name,author,stmt,time,memory,correct,contestId,userId):
+	problem = Problem(problemName=name,timelimit=int(time),memlimit=int(memory),correctness=int(correct),author=author,contest=Contest.get(contestId))
+	page = Page(pagename=pageName(problem.id),data=html(name,stmt))
+	problem.problemUrl = problemUrl(problem.id)
+	return self.editcontest(contestId,userId)
+
+    @turbogears.expose(html='threec.templates.editcontest')
+    def savecontest(self,userId,contestId,name,syear,smonth,sday,shour,smin,eyear,emonth,eday,ehour,emin):
+	syear = int(syear);smonth=int(smonth);sday=int(sday);shour=int(shour);smin=int(smin)
+	eyear = int(eyear);emonth=int(emonth);eday=int(eday);ehour=int(ehour);emin=int(emin)
+
 	start = datetime.datetime(syear,smonth,sday,shour)
 	end = datetime.datetime(eyear,emonth,eday,ehour)
-	contest = Contest(start=start,end=end,name=name,user=user)
+
+	contestId = int(contestId)
+
+	if(start > end):
+	    message = ['The start datetime must be before the end datetime']
+	    if contestId:
+		problemset = Contest.get(contestId).problemset
+	    else:
+		problemset = []
+	    return dict(name=name,message=message,start=start,end=end,userId=userId,contestId=contestId,problemset=problemset)
+
+	if contestId:
+	    contest = Contest.get(contestId)
+	    contest.set(start=start,end=end)
+	else:
+	    contest = Contest(start=start,end=end,name=name,user=userId)
+	    contestId = contest.id
+
 	ret = {}
 	ret['name']=name
 	ret['start']=start
 	ret['end']=end
-	ret['user']=user
+	ret['userId']=userId
+	ret['problemset']=contest.problemset
+	ret['contestId']=contestId
+
 	return ret
 
     @turbogears.expose(html="threec.templates.homepage")
@@ -52,10 +117,9 @@ class Root:
     def editcontest(self,contestId,userId):
 	contestId = int(contestId)
 	name = ''
-	start = ''
-	end = ''
+	start = datetime.datetime.now()
+	end = datetime.datetime.now()
 	problems = []
-	ret = {'name':name,'start':start,'end':end,'problemset':problems,'user':userId}
 
 	if contestId:
 	    contest = Contest.get(contestId)
@@ -63,6 +127,8 @@ class Root:
 	    start = contest.start
 	    end = contest.end
 	    problems = contest.problemset
+
+	ret = {'name':name,'start':start,'end':end,'problemset':problems,'userId':userId,'contestId':contestId}
 
 	return ret
 

@@ -26,7 +26,7 @@ class Problem(SQLObject):
     '''Each problem gets an entry in here'''
     _connection = hub
     author = StringCol(notNone=True)
-    problemName = StringCol(notNone=True)
+    problemName = StringCol(notNone=True,unique=True)
     problemUrl = StringCol(default='/searchProblems')
     timelimit = IntCol(default=10)
     memlimit = IntCol(default=512)
