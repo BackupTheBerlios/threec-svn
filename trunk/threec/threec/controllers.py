@@ -54,6 +54,12 @@ def html(problemName,problemStmt):
     ret = '<html><head>' + problemName + '</head><body>' + problemStmt + '</body></html>'
     return ret
 
+def stripHtml(source):
+    '''returns the text between the leftmost <body> and rightmost </body> tags'''
+    fidx = source[source.index('<body>')+len('<body>'):source.rindex('</body>')]
+    print fidx
+    return fidx
+
 class Root:
 
     @turbogears.expose(html='threec.templates.submissions')
@@ -66,10 +72,19 @@ class Root:
 	return self.editcontest(contestId,userId)
 
     @turbogears.expose(html='threec.templates.editcontest')
-    def addproblem(self,name,author,stmt,time,memory,correct,contestId,userId):
-	problem = Problem(problemName=name,timelimit=int(time),memlimit=int(memory),correctness=int(correct),author=author,contest=Contest.get(contestId))
-	page = Page(pagename=pageName(problem.id),data=html(name,stmt))
-	problem.problemUrl = problemUrl(problem.id)
+    def addproblem(self,name,author,stmt,time,memory,correct,contestId,userId,problemId):
+	problemId = int(problemId)
+
+	if problemId:
+	    problem = Problem.get(problemId)
+	    problem.set(problemName=name,timelimit=int(time),memlimit=int(memory),correctness=int(correct),author=author,contest=Contest.get(contestId))
+	    page = Page.byPagename(pageName(problemId))
+	    page.set(data=html(name,stmt))
+	else:
+	    problem = Problem(problemName=name,timelimit=int(time),memlimit=int(memory),correctness=int(correct),author=author,contest=Contest.get(contestId))
+	    page = Page(pagename=pageName(problem.id),data=html(name,stmt))
+	    problem.problemUrl = problemUrl(problem.id)
+
 	return self.editcontest(contestId,userId)
 
     @turbogears.expose(html='threec.templates.editcontest')
@@ -118,8 +133,10 @@ class Root:
 	return ret
 
     @turbogears.expose(html='threec.templates.editcontest')
-    def editcontest(self,contestId,userId):
+    def editcontest(self,contestId,userId,problemId=0):
 	contestId = int(contestId)
+	problemId = int(problemId)
+
 	name = ''
 	start = datetime.datetime.now()
 	end = datetime.datetime.now()
@@ -132,7 +149,19 @@ class Root:
 	    end = contest.end
 	    problems = contest.problemset
 
-	ret = {'name':name,'start':start,'end':end,'problemset':problems,'userId':userId,'contestId':contestId}
+	ret = {'name':name,'start':start,'end':end,'problemset':problems,'userId':userId,'contestId':contestId,'problemId':problemId}
+	ret['pname']=ret['pauthor']=ret['pstmt']=''
+	ret['ptime']=10
+	ret['pmem']=ret['pcor']=100
+
+	if problemId:
+	    prob = Problem.get(problemId)
+	    ret['pname'] = prob.problemName
+	    ret['pauthor'] = prob.author
+	    ret['ptime'] = prob.timelimit
+	    ret['pmem'] = prob.memlimit
+	    ret['pcor'] = prob.correctness
+	    ret['pstmt'] = stripHtml(Page.byPagename(pageName(problemId)).data)
 
 	return ret
 

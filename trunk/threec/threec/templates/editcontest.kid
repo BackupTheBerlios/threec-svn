@@ -62,17 +62,19 @@
     <hr />
     <tr py:for="prob in problemset">
       <td><a href="${prob.problemUrl}">${prob.problemName}</a></td>
+      <td><a href="/editcontest?problemId=${prob.id}&amp;userId=${userId}&amp;contestId=${contestId}">Edit</a></td>
       <td><a href="/remove?problemId=${prob.id}&amp;userId=${userId}&amp;contestId=${contestId}">Remove</a></td>
     </tr>
   </table>
   
   <form action="addproblem" method="post">
-    Name:<textarea rows="1" name="name"></textarea><br />
-    Author:<textarea rows="1" name="author"></textarea><br />
-    Statement:<textarea rows="1" name="stmt"></textarea><br />
-    Time Limit:<textarea rows="1" name="time">10</textarea><br />
-    Memory Limit:<textarea rows="1" name="memory">100</textarea><br />
-    Correctness:<textarea rows="1" name="correct">100</textarea><br />
+    Name:<textarea rows="1" name="name">${pname}</textarea><br />
+    Author:<textarea rows="1" name="author">${pauthor}</textarea><br />
+    Statement:<textarea rows="1" name="stmt">${pstmt}</textarea><br />
+    Time Limit:<textarea rows="1" name="time">${ptime}</textarea><br />
+    Memory Limit:<textarea rows="1" name="memory">${pmem}</textarea><br />
+    Correctness:<textarea rows="1" name="correct">${pcor}</textarea><br />
+    <input type="hidden" name="problemId" value="${problemId}" />
     <input type="hidden" name="userId" value="${userId}" />
     <input type="hidden" name="contestId" value="${contestId}" />
     <input type="submit" value="Add Problem to Contest"/>
