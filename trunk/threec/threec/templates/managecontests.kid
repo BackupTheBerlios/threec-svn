@@ -21,10 +21,10 @@
       </tr>
       <tr><td width="100%" align="center">Upcoming Contest</td></tr>
       <tr py:for="contest in upcoming" align="center">
-	<td><a href="/editcontest?contestId=${contest.id}&user=${user}">${contest.name}</a></td>
+	<td><a href="/editcontest?contestId=${contest.id}&userId=${userId}">${contest.name}</a></td>
 	<td>{$contest.start}</td><td>{$contest.end}</td>
       </tr>
     </table>
-    <a href="/editcontest?contestId=0&user=${user}">Add a new contest</a>
+    <a href="/editcontest?contestId=0&userId=${userId}">Add a new contest</a>
   </body>
 </html>

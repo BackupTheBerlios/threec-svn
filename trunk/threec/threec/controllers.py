@@ -56,6 +56,10 @@ def html(problemName,problemStmt):
 
 class Root:
 
+    @turbogears.expose(html='threec.templates.submissions')
+    def submissions(self,contestId):
+	return dict(submissions=Contest.get(contestId).submission)
+
     @turbogears.expose(html='threec.templates.editcontest')
     def remove(self,userId,contestId,problemId):
 	Problem.delete(problemId)
