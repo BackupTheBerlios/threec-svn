@@ -6,3 +6,14 @@ Maybe: Use python module difflib for whitespace insensitive (presentation
 error) diffing.  It seems cleaner to call a module than shell out to 
 diff -b.
 
+How to write specific judgers?
+Option 1, implement some python func/class to do judging
+   Pros:  Nice integration with the rest of the code, can do things like 
+        catching exceptions, etc
+   Cons:  The judger must be written in Python, might not be right for the
+        general community.
+
+Option 2: implement a program that reads program output from stdin and 
+          returns true iff the program was correct
+   Pros: More unixy, can write judge in any lang
+   Cons: A bit more unwieldy.
