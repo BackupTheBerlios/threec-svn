@@ -9,6 +9,7 @@ trusted, but it probably isn't sufficient for running a public contest
 over the internet."""
 
 import judge_logger
+import resource_limit
 import logging
 import os
 import random
@@ -27,6 +28,29 @@ class NakedJudge:
     def __init__(self, allow_insecurity = False):
         """@param allow_insecurity Should gaping vulnerabilities be allowed?"""
         self._allow_insecurity = allow_insecurity
+
+    def judge_exact(self, cmd, expected):
+        """ @return JudgeResult containing the result of running cmd against
+        expected output.  Run is successful only if the actual output is
+        an exact match."""
+        run_dir = self.get_run_dir()
+        os.mkdir(run_dir)
+        output_file_name = self.get_output_filename()
+        resource_lim = resource_limit.ResourceLimit(cpu_lim = 1,
+                                                    mem_lim = 32 << 20)
+        forked_pid = os.fork()
+        logger.debug("got pid %d" % forked_pid)
+
+        if forked_pid:  # parent
+            full_output_path = run_dir + '/' + output_file_name
+            return self._wait_for_child_and_judge(forked_pid,
+                                                  expected, full_output_path)
+
+        else:  # child
+            logger.debug('in child')
+            resource_lim.enforce_limits()
+            self._run_jailed_child_and_exit(cmd, run_dir, output_file_name)
+            assert False, "jailed child should have exited"
     
     def get_run_dir(self):
         """ @return The directory that this judger should use for its
@@ -66,15 +90,56 @@ class NakedJudge:
             else:
                 logger.debug("No match actual [[ %s]] and expected [[ %s ]]"
                               % (file_contents, expected))
-
                 return False
 
         except IOError, e:
             logger.debug('in parent of judge_exact' + str(e))
             return False  # Couldn't read file?
 
+    def _split_arglist(self, arglist):
+        """Split arglist into a list of whitespace delimited strings, except
+        that double quoted substrings are placed in a single element in the
+        returned list, with the quotes removed.
+
+        GOTCHAS: This doesn't group quoted strings which are not
+        'well-delimited'.  By well-delimited, we mean a quoted string whose
+        opening quote is bordered to the left by whitespace, and whose closing
+        quote is bordered to the right by whitespace.
+        f"o" and "fo"o are both not well-delimited.
+
+        Here are a few correct usage input/output to the function.
+        
+        'hi' -> ['hi']
+        'echo 1' -> ['echo', '1']
+        'echo "quoted string" more'  -> ['echo', 'quoted string', 'more']
+        """
+        split_at_space = [x for x in arglist.split(' ') if len(x) > 0]
+        ret = []
+        have_unclosed_quote = False
+        for item in split_at_space:
+            # Special case a quoted string containing no delimiters.
+            if len(item) == 1 and item[0] == '"' and item[-1] == '"':
+                ret.append(item[1:-1])
+                continue
+                
+            if not have_unclosed_quote and item[0] == '"':
+                item = item[1:]
+                # Make an new entry in the list to collect quoted string.
+                ret.append('')  
+                have_unclosed_quote = True
+                
+            if have_unclosed_quote:
+                if len(item) > 0 and item[-1] == '"':
+                    item = item[:-1]
+                    have_unclosed_quote = False
+                if len(ret[-1]) > 0: ret[-1] += ' '
+                ret[-1] += item
+            else:
+                ret.append(item)
+                
+        return ret
+
     def _run_jailed_child_and_exit(self, cmd, run_dir, output_file_name):
-        # set resource limits with resource module
         try:
             self.chroot_or_chdir(run_dir)
             # change to "judged" user
@@ -84,7 +149,7 @@ class NakedJudge:
             # test to fail.
             # Maybe we should use subprocess rather than system, so
             # no shell calls are performed.
-            args = cmd.split()
+            args = self._split_arglist(cmd)
             logger.info("running cmd " +  cmd)
             judged_proc = subprocess.Popen(args, stdout = subprocess.PIPE,
                                            close_fds = True)
@@ -109,26 +174,7 @@ class NakedJudge:
         except SecurityException:
             os._exit(1)
 
-    def judge_exact(self, cmd, expected):
-        """ @return JudgeResult containing the result of running cmd against
-        expected output.  Run is successful only if the actual output is
-        an exact match."""
-        run_dir = self.get_run_dir()
-        os.mkdir(run_dir)
-        output_file_name = self.get_output_filename()
 
-        forked_pid = os.fork()
-        logger.debug("got pid %d" % forked_pid)
-
-        if forked_pid:  # parent
-            full_output_path = run_dir + '/' + output_file_name
-            return self._wait_for_child_and_judge(forked_pid,
-                                                  expected, full_output_path)
-
-        else:  # child
-            logger.debug('in child')
-            self._run_jailed_child_and_exit(cmd, run_dir, output_file_name)
-            assert False, "jailed child should have exited"
             
 class SecurityException(Exception):
     """ A SecurityException is raised when the judge refuses to continue
