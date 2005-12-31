@@ -33,11 +33,16 @@ class NakedJudgeTestCase(unittest.TestCase):
         self.assertFalse(self.judger.judge_exact(prints_10_slowly, '10\n'))
 
     def testSplitArglist(self):
-        input_output = [('echo', ['echo']),
-                        ('echo 1', ['echo', '1']),
-                        ('echo "hi"', ['echo', 'hi']),
-                        ('echo "hello 1 2 3"', ['echo', 'hello 1 2 3']),
-                        ('echo "hello    1    2 3"', ['echo', 'hello 1 2 3'])]
+        input_output = [
+            ('echo', ['echo']),
+            ('echo 1', ['echo', '1']),
+            ('echo "hi"', ['echo', 'hi']),
+            ('echo "hello 1 2 3"', ['echo', 'hello 1 2 3']),
+            ('echo "hello    1    2 3"', ['echo', 'hello 1 2 3']),
+            ('some "quoted stuff" more  "quoted   stuff"',
+             ['some', 'quoted stuff', 'more', 'quoted stuff'])
+            ]
+        
         for in_val, out_val in input_output:
             self.assertEquals(self.judger._split_arglist(in_val), out_val)
 

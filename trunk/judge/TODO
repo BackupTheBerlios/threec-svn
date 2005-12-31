@@ -1,0 +1,11 @@
+Split NakedJudge into components.  It has currently has two distinct and 
+separable jobs, one is to set up an environment and execute code, which might 
+be named the Executor infuture versions, the other is two determine of the
+job actually did what it was supposed to, which itself should be called the
+Judger.
+
+Support running the judger in chroot'ed environment (or split this code into a 
+new Executor?).  This has it's owndifficulties, since running a chrooted 
+binary requires that all its dynamic library dependencies are also included 
+in the chrooted directory.  There is also the problem that some programs 
+require files at runtine, which are not easily determined with automatically.

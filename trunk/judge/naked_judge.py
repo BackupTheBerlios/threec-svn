@@ -33,9 +33,9 @@ class NakedJudge:
         """ @return JudgeResult containing the result of running cmd against
         expected output.  Run is successful only if the actual output is
         an exact match."""
-        run_dir = self.get_run_dir()
+        run_dir = self._get_run_dir()
         os.mkdir(run_dir)
-        output_file_name = self.get_output_filename()
+        output_file_name = self._get_output_filename()
         resource_lim = resource_limit.ResourceLimit(cpu_lim = 1,
                                                     mem_lim = 32 << 20)
         forked_pid = os.fork()
@@ -52,16 +52,25 @@ class NakedJudge:
             self._run_jailed_child_and_exit(cmd, run_dir, output_file_name)
             assert False, "jailed child should have exited"
     
-    def get_run_dir(self):
+    def _get_run_dir(self):
         """ @return The directory that this judger should use for its
         chroot."""
         # This should be a function of judge id, just use a random name for now
         return '/tmp/' + str(random.randint(0, 10000000))
 
-    def get_output_filename(self):
+    def _get_output_filename(self):
         return 'actual_out'
 
-    def chroot_or_chdir(self, dir):
+    def _executable_in_path(self, filename):
+        """ @return true iff filename is readable and executable in PATH """
+        path = os.getenv('PATH')
+        for prefix in path.split(':'):
+            full_path = os.path.expanduser(prefix + '/' + filename)
+            if os.access(full_path, os.R_OK | os.X_OK):
+                return True
+        return False
+
+    def _chroot_or_chdir(self, dir):
         """ Change root or change directory to dir.  Chroot is attempted
         first, since it is much more secure, but chroot requires
         privileges that usually only root has. """
@@ -141,7 +150,7 @@ class NakedJudge:
 
     def _run_jailed_child_and_exit(self, cmd, run_dir, output_file_name):
         try:
-            self.chroot_or_chdir(run_dir)
+            self._chroot_or_chdir(run_dir)
             # change to "judged" user
             # Call _exit rather than exit since exit raises a SystemExit,
             # and we want to be more discrete.  If the ordinary exit is
@@ -151,6 +160,9 @@ class NakedJudge:
             # no shell calls are performed.
             args = self._split_arglist(cmd)
             logger.info("running cmd " +  cmd)
+            access_error_msg = "Could find " + args[0] + " in PATH (" + \
+                               os.getenv('PATH') + ")"
+            assert self._executable_in_path(args[0]), access_error_msg
             judged_proc = subprocess.Popen(args, stdout = subprocess.PIPE,
                                            close_fds = True)
             # I thought about using a pipeline for juding and using
