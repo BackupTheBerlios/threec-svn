@@ -1,12 +1,11 @@
 #!/usr/bin/python
 
-"""The NakedJudge is a judger which doesn't use an advanced jailing
+"""The NakedExecutor is an exector which doesn't use an advanced jailing
 techniques.  Instead it uses as much as protection against rogue code
 as it can muster on a default Unix system.
 
-It should be sufficient for a local contest where the contestants are
-trusted, but it probably isn't sufficient for running a public contest
-over the internet."""
+It should be sufficient for running trusted but possibly stupid code,  but it
+isn't sufficient for running a public contest over the internet."""
 
 import judge_logger
 import resource_limit
@@ -20,19 +19,22 @@ import subprocess
 import time
 
 logger = logging.getLogger('judge')
-logger.setLevel(logging.DEBUG)
 
-class NakedJudge:
-    """The NakedJudge runs code using standard Unix jailing techniques."""
+class NakedExecutor:
+    """The NakedExecutor runs code using standard Unix jailing techniques."""
 
     def __init__(self, allow_insecurity = False):
         """@param allow_insecurity Should gaping vulnerabilities be allowed?"""
         self._allow_insecurity = allow_insecurity
 
-    def judge_exact(self, cmd, expected):
-        """ @return JudgeResult containing the result of running cmd against
-        expected output.  Run is successful only if the actual output is
-        an exact match."""
+    def capture_stdout(self, cmd):
+        """ @return the output of cmd as a string """
+        output, res = self.capture_stdout_and_resource_usage(cmd)
+        return output
+
+    def capture_stdout_and_resource_usage(self, cmd):
+        """ @return tuple containing the output as a string and the
+        resource usage """
         run_dir = self._get_run_dir()
         os.mkdir(run_dir)
         output_file_name = self._get_output_filename()
@@ -41,16 +43,21 @@ class NakedJudge:
         forked_pid = os.fork()
         logger.debug("got pid %d" % forked_pid)
 
-        if forked_pid:  # parent
-            full_output_path = run_dir + '/' + output_file_name
-            return self._wait_for_child_and_judge(forked_pid,
-                                                  expected, full_output_path)
-
-        else:  # child
+        if forked_pid == 0:  # child
             logger.debug('in child')
             resource_lim.enforce_limits()
             self._run_jailed_child_and_exit(cmd, run_dir, output_file_name)
             assert False, "jailed child should have exited"
+
+        full_output_path = run_dir + '/' + output_file_name
+        logger.debug('parent before wait')
+        ret = os.waitpid(forked_pid, 0)
+        logger.debug('parent after wait, reading from %s' % full_output_path)
+        res_usage = resource.getrusage(resource.RUSAGE_CHILDREN)
+        try:
+            return open(full_output_path, 'r').read(), res_usage
+        except IOError, e:
+            return '', res_usage
     
     def _get_run_dir(self):
         """ @return The directory that this judger should use for its
@@ -84,26 +91,10 @@ class NakedJudge:
                                     "chdir because insecurity is not allowed")
 
     def _wait_for_child_and_judge(self, child_pid, expected, full_output_name):
-        logger.debug('parent before wait')
-        ret = os.waitpid(child_pid, 0)
-        logger.debug('parent after wait')
+        pass  # TODO(rrenaud): delete?
         #time.sleep(.1)
         # Maybe we should check ret[1], which stores childs exit status.
-        try:
-            child_usage = resource.getrusage(resource.RUSAGE_CHILDREN)
-            logger.debug('Parent: reading ' +  full_output_name)
-            output_lines = open(full_output_name, 'r').readlines()
-            file_contents = ''.join(output_lines)
-            if file_contents == expected:
-                return True
-            else:
-                logger.debug("No match actual [[ %s]] and expected [[ %s ]]"
-                              % (file_contents, expected))
-                return False
 
-        except IOError, e:
-            logger.debug('in parent of judge_exact' + str(e))
-            return False  # Couldn't read file?
 
     def _split_arglist(self, arglist):
         """Split arglist into a list of whitespace delimited strings, except
@@ -151,13 +142,12 @@ class NakedJudge:
     def _run_jailed_child_and_exit(self, cmd, run_dir, output_file_name):
         try:
             self._chroot_or_chdir(run_dir)
-            # change to "judged" user
+            # TODO(rrenaud): support running as a different user,
+            # change to "jailed" user.
             # Call _exit rather than exit since exit raises a SystemExit,
             # and we want to be more discrete.  If the ordinary exit is
-            # called, then pyunit will catch systemExit, which causes this
-            # test to fail.
-            # Maybe we should use subprocess rather than system, so
-            # no shell calls are performed.
+            # called, then pyunit will catch systemExit, which causes
+            # the unittest to fail.
             args = self._split_arglist(cmd)
             logger.info("running cmd " +  cmd)
             access_error_msg = "Could find " + args[0] + " in PATH (" + \
@@ -180,8 +170,11 @@ class NakedJudge:
             output_file.close()
             logger.debug('copied to %s/%s' % (run_dir, output_file_name))
             assert os.access(output_file_name, os.R_OK)
-            logger.debug('Child: file contents %s' % (
-                open(output_file_name, 'r').read()))
+
+            if logger.isEnabledFor(logging.DEBUG):
+                print 'debugging'
+                logger.debug('Child: file contents %s' % (
+                    open(output_file_name, 'r').read()))
             os._exit(0)
         except SecurityException:
             os._exit(1)

@@ -2,10 +2,19 @@ Split NakedJudge into components.  It has currently has two distinct and
 separable jobs, one is to set up an environment and execute code, which might 
 be named the Executor infuture versions, the other is two determine of the
 job actually did what it was supposed to, which itself should be called the
-Judger.
+Judger.  A judger will have an executor and then apply extra judging logic.
 
-Support running the judger in chroot'ed environment (or split this code into a 
-new Executor?).  This has it's owndifficulties, since running a chrooted 
-binary requires that all its dynamic library dependencies are also included 
-in the chrooted directory.  There is also the problem that some programs 
-require files at runtine, which are not easily determined with automatically.
+Support running the Executor in chroot'ed environment.  This has it's own 
+difficulties, since running a chrooted  binary requires that all its dynamic 
+library dependencies are also included  in the chrooted directory.  There is 
+also the problem that some programs require files at runtine, which are not 
+easily determined automatically.  Move the allow_insecurity = False branch of 
+the NakedExecutor into it's own Executor.
+
+Where is the split between ResourceLimit and Executor?
+
+Change the XML interface to the judge.  There should be a judger state 
+(courtroom?).  The xml interface should just call into the courtroom via
+a thin layer.
+
+Make a JudgeResult class.

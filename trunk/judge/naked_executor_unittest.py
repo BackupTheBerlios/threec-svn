@@ -2,22 +2,23 @@
 
 import os
 import unittest
-import naked_judge
+import naked_executor
 
-class NakedJudgeTestCase(unittest.TestCase):
+class NakedExecutorTestCase(unittest.TestCase):
     def setUp(self):
         if os.getuid() == 0:
             # We are root, we can use security measures such as chroot,
             # so insecurity is not allowed.
-            self.judger = naked_judge.NakedJudge(allow_insecurity = False)
+            self.executor = naked_executor.NakedExecutor(
+                allow_insecurity = False)
         else:
             # We don't have the capabilities to do fancy things, run
             # insecurely
-            self.judger = naked_judge.NakedJudge(allow_insecurity = True)
+            self.executor = naked_executor.NakedExecutor(
+                allow_insecurity = True)
         
-    def testAccepted(self):
-        self.assertTrue(self.judger.judge_exact('echo 1', '1\n'))
-        self.assertFalse(self.judger.judge_exact('echo 1', '\n'))
+    def testCaptureStdout(self):
+        self.assertEquals(self.executor.capture_stdout('echo 1'), '1\n')
         # Since the command passed to judge exact won't do any shell magic,
         # we fudge a sleep x && echo 10 by writing a short inline python
         # program.
@@ -26,11 +27,11 @@ class NakedJudgeTestCase(unittest.TestCase):
                                   'while time.time() - start < %d: pass\n' + \
                                   'print 10\n"'
 
-        prints_10_quickly = 'python -c ' + (waiter_template_program % 0)
-        prints_10_slowly = 'python -c ' + (waiter_template_program % 2)
-        self.assertTrue(self.judger.judge_exact(prints_10_quickly, '10\n'))
+        print_10_quick = 'python -c ' + (waiter_template_program % 0)
+        print_10_slow = 'python -c ' + (waiter_template_program % 2)
+        self.assertEquals(self.executor.capture_stdout(print_10_quick), '10\n')
         # The second call should timeout.
-        self.assertFalse(self.judger.judge_exact(prints_10_slowly, '10\n'))
+        self.assertEquals(self.executor.capture_stdout(print_10_slow), '')
 
     def testSplitArglist(self):
         input_output = [
@@ -44,7 +45,7 @@ class NakedJudgeTestCase(unittest.TestCase):
             ]
         
         for in_val, out_val in input_output:
-            self.assertEquals(self.judger._split_arglist(in_val), out_val)
+            self.assertEquals(self.executor._split_arglist(in_val), out_val)
 
 
 if __name__ == "__main__":

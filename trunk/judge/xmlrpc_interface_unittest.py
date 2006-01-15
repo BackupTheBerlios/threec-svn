@@ -32,19 +32,26 @@ class XMLRPCInterfaceTestCase(twisted.trial.unittest.TestCase):
         judge_connection = twisted.web.xmlrpc.Proxy(server_uri)
         print 'Connected'
         sample_problem_1 = {'problem_number': 1, 'input': '1 2\n3 4\n5 6\n',
-                            'output': '3\n7\n11', 'type': 'exact'}
+                            'output': '3\n7\n11\n', 'type': 'exact'}
         print 'Adding sample problem 1'
         # This proxy callRemote/deferred stuff is a bit weird.
         x = judge_connection.callRemote('add_problem', sample_problem_1)
-        self.assertTrue(unittest.deferredResult(x))
+        self.failUnless(twisted.trial.unittest.deferredResult(x))
 
-        correct_submission = {'code': """import sys
-        for line in sys.stdin:
-           x, y = int(line.split()[0]), int(line.split()[1])
-           print x + y"""}
-        x = judge_connection.callRemote(correct_submission)
-        self.assertTrue(unittest.deferredResult(x))
+        correct_submission = {'code': "import sys\n"
+                              "for line in sys.stdin:\n"
+                              "     tokens = line.split()\n"
+                              "     x, y = int(tokens[0]), int(tokens[1])\n"
+                              "     print x + y\n",
+                              'problem_number': 1,
+                              }
+        x = judge_connection.callRemote('judge', correct_submission)
+        self.failUnless(twisted.trial.unittest.deferredResult(x))
 
 if __name__ == '__main__':
-    #assert False, "the unittest doesn't actually run"
-    twisted.trial.unittest.main()
+    import os
+    import sys
+    # The twisted guys are nuts, I can't figure out how to just run a test
+    # directly from the command line (eg, ./my_unittest.py should run
+    # the testing suite in my_unittest.  I can't figure out how to.  Boggle.
+    os.system('trial ' + sys.argv[0])  
